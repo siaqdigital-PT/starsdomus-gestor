@@ -759,6 +759,11 @@ if ('serviceWorker' in navigator) {
         <select class="form-ctrl" id="f-prop">
           <option value="">Selecionar...</option>
         </select>
+        <!-- Miniatura da propriedade selecionada -->
+        <div id="f-prop-thumb" style="display:none;margin-top:8px;border-radius:10px;overflow:hidden;height:100px;background:var(--dark3);position:relative">
+          <img id="f-prop-thumb-img" style="width:100%;height:100%;object-fit:cover;display:block">
+          <div id="f-prop-thumb-label" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:6px 10px;font-size:12px;font-weight:600;color:#fff"></div>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Tipo de Serviço</label>
@@ -898,6 +903,19 @@ if ('serviceWorker' in navigator) {
         <label class="form-label">📌 Notas para o Staff</label>
         <textarea class="form-ctrl" id="p-notas" rows="3" placeholder="Ex: Cão na casa, porta difícil, cofre no quarto..." style="resize:none;font-size:13px;line-height:1.5"></textarea>
         <div style="font-size:10px;color:var(--text-muted);margin-top:4px">Visível ao funcionário antes de iniciar o serviço</div>
+      </div>
+      <!-- Foto da propriedade -->
+      <div class="form-group">
+        <label class="form-label">📷 Foto da Propriedade</label>
+        <div id="p-foto-preview" style="display:none;margin-bottom:8px;border-radius:10px;overflow:hidden;height:140px;background:var(--dark3)">
+          <img id="p-foto-img" style="width:100%;height:100%;object-fit:cover;display:block">
+        </div>
+        <label style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--dark3);border:1.5px dashed var(--border);border-radius:10px;padding:14px;cursor:pointer;font-size:13px;color:var(--text-muted);font-family:'DM Sans',sans-serif" id="p-foto-label">
+          <span style="font-size:20px">📷</span>
+          <span id="p-foto-label-text">Clica para escolher foto</span>
+          <input type="file" id="p-foto-input" accept="image/*" style="display:none" onchange="handlePropFoto(event)">
+        </label>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px">Aparece como miniatura no seletor de propriedades</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1045,7 +1063,7 @@ async function loadAllData() {
       supa.get('propriedades','?ativa=eq.true&order=nome')
     ]);
     staff = staffRaw.map(s=>({id:s.id,nome:s.nome,iniciais:s.iniciais,cor:s.cor,taxa:parseFloat(s.taxa),tel:s.tel||'',pin:s.pin||'1234'}));
-    propriedades = propsRaw.map(p=>({id:p.id,nome:p.nome,morada:p.morada||'',dono:p.dono||'',tel:p.tel||'',emoji:p.emoji||'🏠',lat:p.lat,lng:p.lng,notas:p.notas||''}));
+    propriedades = propsRaw.map(p=>({id:p.id,nome:p.nome,morada:p.morada||'',dono:p.dono||'',tel:p.tel||'',emoji:p.emoji||'🏠',lat:p.lat,lng:p.lng,notas:p.notas||'',foto_url:p.foto_url||''}));
     const from=addDays(todayStr,-60), to=addDays(todayStr,30);
     const servRaw = await supa.get('v_servicos',`?data=gte.${from}&data=lte.${to}&order=data,inicio`);
     servicos = servRaw.map(mapServico);
@@ -1560,8 +1578,98 @@ async function guardarDetalhe(id) {
 function buildStaffGrid() {
   document.getElementById('f-staff-grid').innerHTML=staff.map(s=>`<div class="staff-sel-chip" data-sid="${s.id}" onclick="this.classList.toggle('selected')"><span style="width:8px;height:8px;border-radius:50%;background:${s.cor};display:inline-block"></span>${s.nome.split(' ')[0]}</div>`).join('');
 }
+// ═══════════════════════════════════════════════
+//  FOTO DA PROPRIEDADE
+// ═══════════════════════════════════════════════
+let _propFotoFile = null;
+
+function handlePropFoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  _propFotoFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById('p-foto-preview');
+    const img = document.getElementById('p-foto-img');
+    const lbl = document.getElementById('p-foto-label-text');
+    if (preview) preview.style.display = 'block';
+    if (img) img.src = e.target.result;
+    if (lbl) lbl.textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadPropFoto(propId) {
+  if (!_propFotoFile) return null;
+  try {
+    const ext = _propFotoFile.name.split('.').pop();
+    const path = `${propId}/foto.${ext}`;
+    const formData = new FormData();
+    formData.append('', _propFotoFile);
+    const r = await fetch(`${SUPA_URL}/storage/v1/object/propriedades/${path}`, {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` },
+      body: _propFotoFile
+    });
+    if (!r.ok) {
+      // Try upsert if already exists
+      await fetch(`${SUPA_URL}/storage/v1/object/propriedades/${path}`, {
+        method: 'PUT',
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` },
+        body: _propFotoFile
+      });
+    }
+    _propFotoFile = null;
+    return `${SUPA_URL}/storage/v1/object/public/propriedades/${path}`;
+  } catch(e) {
+    console.error('Erro upload foto:', e);
+    return null;
+  }
+}
+
+function resetPropFoto() {
+  _propFotoFile = null;
+  const preview = document.getElementById('p-foto-preview');
+  const img = document.getElementById('p-foto-img');
+  const lbl = document.getElementById('p-foto-label-text');
+  const input = document.getElementById('p-foto-input');
+  if (preview) preview.style.display = 'none';
+  if (img) img.src = '';
+  if (lbl) lbl.textContent = 'Clica para escolher foto';
+  if (input) input.value = '';
+}
+
+function updatePropSelectThumb(sel) {
+  const propId = sel?.value || document.getElementById('f-prop')?.value;
+  const thumb = document.getElementById('f-prop-thumb');
+  const img = document.getElementById('f-prop-thumb-img');
+  const lbl = document.getElementById('f-prop-thumb-label');
+  if (!thumb) return;
+  const p = getProp(propId);
+  if (p && p.foto_url) {
+    thumb.style.display = 'block';
+    img.src = p.foto_url;
+    if (lbl) lbl.textContent = p.nome;
+  } else {
+    thumb.style.display = 'none';
+  }
+}
+
 function buildPropSelect() {
-  document.getElementById('f-prop').innerHTML='<option value="">Selecionar...</option>'+propriedades.map(p=>`<option value="${p.id}">${p.emoji} ${p.nome}</option>`).join('');
+  const sel = document.getElementById('f-prop');
+  sel.innerHTML = '<option value="">Selecionar...</option>' +
+    propriedades.map(p => {
+      const thumb = p.foto_url
+        ? `<span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:url('${p.foto_url}') center/cover;vertical-align:middle;margin-right:6px"></span>`
+        : `<span style="margin-right:4px">${p.emoji||'🏠'}</span>`;
+      return `<option value="${p.id}" data-foto="${p.foto_url||''}">${p.emoji||'🏠'} ${p.nome}</option>`;
+    }).join('');
+  // Add thumbnail preview when selecting
+  sel.onchange = function() {
+    updatePropSelectThumb(this);
+    updateConflictWarning();
+    updateRecorrenciaPreview();
+  };
 }
 function toggleDesc() { document.getElementById('f-desc-wrap').style.display=document.getElementById('f-tipo').value==='Outro'?'block':'none'; }
 async function saveServico() {
@@ -2107,8 +2215,24 @@ function renderProps(filter='') {
   if(!filtered.length){list.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px">Nenhuma propriedade encontrada</div>`;return;}
   list.innerHTML=filtered.map(p=>{
     const myServs=servicos.filter(s=>s.propId===p.id&&s.data===todayStr);
-    return `<div class="servico-card" id="propcard-${p.id}">
-      <div class="servico-top" style="margin-bottom:6px"><div style="display:flex;align-items:center;gap:10px"><div style="font-size:28px">${p.emoji}</div><div><div class="servico-prop">${p.nome}</div><div class="servico-meta" style="margin-top:2px">${p.morada}</div></div></div>${myServs.length?`<span class="pill agendado">${myServs.length} hoje</span>`:''}</div>
+    const fotoHeader = p.foto_url
+      ? `<div style="height:130px;background:url('${p.foto_url}') center/cover;margin:-14px -14px 12px;border-radius:12px 12px 0 0;position:relative">
+           <div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(13,15,20,0.85));border-radius:12px 12px 0 0"></div>
+           <div style="position:absolute;bottom:10px;left:14px;display:flex;align-items:center;gap:8px">
+             <div style="font-size:22px">${p.emoji}</div>
+             <div><div class="servico-prop" style="color:#fff">${p.nome}</div><div style="font-size:11px;color:rgba(255,255,255,0.65)">${p.morada}</div></div>
+           </div>
+           ${myServs.length?`<span class="pill agendado" style="position:absolute;top:10px;right:10px">${myServs.length} hoje</span>`:''}
+         </div>`
+      : `<div class="servico-top" style="margin-bottom:6px">
+           <div style="display:flex;align-items:center;gap:10px">
+             <div style="font-size:28px">${p.emoji}</div>
+             <div><div class="servico-prop">${p.nome}</div><div class="servico-meta" style="margin-top:2px">${p.morada}</div></div>
+           </div>
+           ${myServs.length?`<span class="pill agendado">${myServs.length} hoje</span>`:''}
+         </div>`;
+    return `<div class="servico-card" id="propcard-${p.id}" style="overflow:hidden">
+      ${fotoHeader}
       <div class="servico-row"><span style="font-size:13px">👤</span><span class="servico-meta">${p.dono}${p.tel?' · '+p.tel:''}</span></div>
       <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
         <button onclick="verHistoricoProp('${p.id}')" style="flex:1;background:rgba(92,143,224,0.08);border:1px solid rgba(92,143,224,0.25);border-radius:8px;color:var(--blue);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:8px;cursor:pointer">📅 Histórico</button>
@@ -2147,12 +2271,11 @@ function abrirNovoServico() {
 }
 
 function abrirNovaProps() {
-  // Reset all prop form fields
   ['p-nome','p-morada','p-dono','p-tel','p-notas'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   document.getElementById('p-emoji').value = '🏠';
-  // Reset title and button
+  resetPropFoto();
   const title = document.querySelector('#modal-prop .modal-title');
   if(title) title.textContent = 'Nova Propriedade';
   const btn = document.querySelector('#modal-prop .modal-footer .topbar-btn:last-child');
@@ -2168,7 +2291,16 @@ function editProp(id) {
   document.getElementById('p-tel').value   = p.tel    || '';
   document.getElementById('p-emoji').value = p.emoji  || '🏠';
   document.getElementById('p-notas').value = p.notas  || '';
-  // Update modal title and button
+  // Mostrar foto existente se houver
+  resetPropFoto();
+  if (p.foto_url) {
+    const preview = document.getElementById('p-foto-preview');
+    const img = document.getElementById('p-foto-img');
+    const lbl = document.getElementById('p-foto-label-text');
+    if (preview) preview.style.display = 'block';
+    if (img) img.src = p.foto_url;
+    if (lbl) lbl.textContent = 'Clica para substituir a foto';
+  }
   const title = document.querySelector('#modal-prop .modal-title');
   if(title) title.textContent = 'Editar Propriedade';
   const btn=document.querySelector('#modal-prop .modal-footer .topbar-btn:last-child');
@@ -2185,31 +2317,42 @@ async function updateProp(id) {
     emoji: document.getElementById('p-emoji').value||p.emoji,
     notas: document.getElementById('p-notas').value||''
   };
+  // Upload nova foto se existir
+  const fotoUrl = await uploadPropFoto(id);
+  if (fotoUrl) body.foto_url = fotoUrl;
   try {
     await supa.patch('propriedades',id,body);
     Object.assign(p,body);
+    if (fotoUrl) p.foto_url = fotoUrl;
     closeModal('modal-prop');
     renderProps(); buildPropSelect();
     showToast('Propriedade atualizada!');
-    // Reset modal to "Nova Propriedade" state
     const title=document.querySelector('#modal-prop .modal-title');
     if(title) title.textContent='Nova Propriedade';
     const btn=document.querySelector('#modal-prop .modal-footer .topbar-btn:last-child');
     if(btn){btn.textContent='Guardar';btn.onclick=saveProp;}
     ['p-nome','p-morada','p-dono','p-tel','p-emoji','p-notas'].forEach(fid=>{const el=document.getElementById(fid);if(el)el.value='';});
+    resetPropFoto();
   } catch(e){showToast('Erro ao atualizar','⚠');console.error(e);}
 }
 async function saveProp() {
   const nome=document.getElementById('p-nome').value.trim();
   if(!nome){showToast('Nome obrigatório','⚠');return;}
-  const body={nome,morada:document.getElementById('p-morada').value,dono:document.getElementById('p-dono').value,tel:document.getElementById('p-tel').value,emoji:document.getElementById('p-emoji').value||'🏠',notas:document.getElementById('p-notas').value||'',ativa:true};
+  const body={nome,morada:document.getElementById('p-morada').value,dono:document.getElementById('p-dono').value,tel:document.getElementById('p-tel').value,emoji:document.getElementById('p-emoji').value||'🏠',notas:document.getElementById('p-notas').value||'',ativa:true,foto_url:''};
   try {
     const [nova]=await supa.post('propriedades',body);
-    propriedades.push({id:nova.id,...body});
+    // Upload foto se existir
+    const fotoUrl = await uploadPropFoto(nova.id);
+    if (fotoUrl) {
+      await supa.patch('propriedades', nova.id, {foto_url: fotoUrl});
+      nova.foto_url = fotoUrl;
+    }
+    propriedades.push({id:nova.id,...body,foto_url:fotoUrl||''});
     closeModal('modal-prop');
     renderProps(); buildPropSelect();
     showToast('Propriedade adicionada!');
-    ['p-nome','p-morada','p-dono','p-tel','p-emoji','p-notas'].forEach(fid=>{const el=document.getElementById(fid);if(el)el.value='';});
+    ['p-nome','p-morada','p-dono','p-tel','p-emoji','p-notas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    resetPropFoto();
   } catch(e){showToast('Erro ao adicionar','⚠');console.error(e);}
 }
 
