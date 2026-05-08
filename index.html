@@ -11,451 +11,389 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 :root {
-  --gold: #C9A84C;
-  --gold-light: #E8C97A;
-  --gold-dim: rgba(201,168,76,0.13);
-  --dark: #0D0F14;
-  --dark2: #141720;
-  --dark3: #1C2030;
-  --dark4: #222640;
-  --border: rgba(201,168,76,0.18);
-  --border2: rgba(255,255,255,0.06);
-  --text: #EDE9E0;
-  --text-muted: rgba(237,233,224,0.45);
-  --green: #4CAF7D;
-  --red: #E05C5C;
-  --blue: #5C8FE0;
-  --nav-h: 68px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* NEW CHAMPAGNE PALETTE */
+  --gold: #B8923A;
+  --gold-deep: #8E6E22;
+  --gold-soft: #D9B968;
+  --gold-light: #F0DFAE;
+  --gold-dim: rgba(184,146,58,0.14);
+  --gold-dim2: rgba(184,146,58,0.24);
+  /* Surfaces */
+  --page-bg: linear-gradient(180deg, #F5E9C8 0%, #E9D49E 60%, #DDC07F 100%);
+  --card: #FFFFFF;
+  --card-alt: #FBF6EA;
+  --dark: #1E1810;
+  --dark2: #2A2216;
+  --dark3: #FBF6EA;
+  --dark4: #F0E8D0;
+  --border: rgba(168,132,50,0.14);
+  --border2: rgba(168,132,50,0.24);
+  /* Text */
+  --text: #1E1810;
+  --text-muted: #8B8270;
+  --text-soft: #5C5240;
+  /* Status */
+  --green: #2F7D49;
+  --green-soft: #E5F1E5;
+  --blue: #2B5FA8;
+  --blue-soft: #E2EAF6;
+  --red: #C0392B;
+  --red-soft: #FDECEA;
+  --orange: #B8923A;
+  /* Fonts */
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
+* { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  background: var(--dark);
+  font-family: var(--font-sans);
+  background: var(--page-bg);
+  background-attachment: fixed;
   color: var(--text);
-  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
   height: 100%;
-  overscroll-behavior: none;
 }
 
-/* ── SCREENS ── */
-.screen { display:none; flex-direction:column; height:100dvh; }
-.screen.active { display:flex; }
+.scroll-body { padding: 0 16px 120px; }
 
-/* ── TOP BAR ── */
+/* ── Screens ── */
+.screen { display: none; flex-direction: column; height: 100dvh; overflow: hidden; }
+.screen.active { display: flex; }
+.screen > .scroll-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-top: 8px; }
+
+/* ── Topbar ── */
 .topbar {
-  background: var(--dark2);
+  background: rgba(255,253,247,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  padding: 14px 18px 12px;
-  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top, 0px);
   flex-shrink: 0;
-  position: relative;
+  z-index: 100;
 }
-.topbar-row { display:flex; align-items:center; justify-content:space-between; }
-.topbar-logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 18px;
-  color: var(--gold);
-  letter-spacing: -0.3px;
+.topbar-row { display: flex; align-items: center; gap: 10px; height: 54px; }
+.topbar-title {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 21px;
+  color: var(--text);
+  flex: 1;
 }
-.topbar-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.topbar-btn {
-  background: var(--gold);
-  color: var(--dark);
-  border: none;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
+.topbar-title em { color: var(--gold); font-style: normal; }
+.topbar-sub {
+  font-size: 10px;
   font-weight: 700;
-  padding: 9px 14px;
-  cursor: pointer;
-  display: flex; align-items: center; gap: 6px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.topbar-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(180deg, #D4AF5C, #A88438);
+  border: none; border-radius: 999px;
+  color: #fff; font-family: var(--font-sans); font-size: 12px; font-weight: 700;
+  padding: 0 14px; height: 32px; cursor: pointer; letter-spacing: 0.02em;
+  box-shadow: 0 3px 8px -2px rgba(168,132,50,.45);
 }
 .topbar-btn.outline {
-  background: transparent;
-  color: var(--gold);
-  border: 1px solid var(--border);
-}
-
-/* ── SCROLL BODY ── */
-.scroll-body {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px;
-  padding-bottom: calc(var(--nav-h) + 16px + var(--safe-bottom));
-}
-
-/* ── BOTTOM NAV ── */
-.bottom-nav {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: calc(var(--nav-h) + var(--safe-bottom));
-  background: var(--dark2);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: flex-start;
-  padding-top: 8px;
-  z-index: 100;
-  backdrop-filter: blur(16px);
-}
-.nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  padding: 6px 4px;
-  border-radius: 10px;
-  transition: all 0.15s;
-}
-.nav-item.active .nav-icon-wrap { background: var(--gold-dim); }
-.nav-item.active .nav-label { color: var(--gold); }
-.nav-item.active .nav-icon { color: var(--gold); }
-.nav-icon-wrap {
-  width: 42px; height: 32px;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s;
-}
-.nav-icon { font-size: 18px; color: var(--text-muted); transition: color 0.15s; }
-.nav-label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.3px; transition: color 0.15s; }
-.nav-badge {
-  position: absolute;
-  top: 2px; right: calc(50% - 26px);
-  width: 16px; height: 16px;
-  background: var(--red);
-  border-radius: 50%;
-  font-size: 9px;
-  font-weight: 700;
-  color: white;
-  display: flex; align-items: center; justify-content: center;
-  border: 2px solid var(--dark2);
-}
-
-/* ── CARDS ── */
-.card {
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  margin-bottom: 14px;
-}
-.card-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px 10px;
-  border-bottom: 1px solid var(--border2);
-}
-.card-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 15px;
-  font-weight: 600;
-}
-.card-body { padding: 14px 16px; }
-
-/* ── STAT CARDS ── */
-.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-.stat-card {
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 14px;
-  position: relative;
-  overflow: hidden;
-}
-.stat-card::after {
-  content:'';
-  position:absolute; top:-20px; right:-20px;
-  width:70px; height:70px;
-  background: radial-gradient(circle, var(--gold-dim), transparent 70%);
-  border-radius:50%;
-}
-.stat-icon { font-size: 20px; margin-bottom: 10px; }
-.stat-val {
-  font-family: 'Playfair Display', serif;
-  font-size: 28px;
-  color: var(--gold);
-  line-height: 1;
-  margin-bottom: 2px;
-}
-.stat-lbl { font-size: 11px; color: var(--text-muted); font-weight: 500; }
-
-/* ── SERVICE CARDS ── */
-.servico-card {
-  background: var(--dark3);
+  background: var(--card-alt);
+  color: var(--text);
   border: 1px solid var(--border2);
-  border-radius: 12px;
+  box-shadow: none;
+}
+.topbar-btn:active { opacity: 0.85; transform: scale(0.97); }
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(62px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(255,253,247,0.92);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-around; align-items: center;
+  z-index: 200;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 16px; cursor: pointer; position: relative; color: var(--text-muted); }
+.nav-item.active { color: var(--gold-deep); }
+.nav-item.active::before {
+  content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 3px; border-radius: 999px;
+  background: linear-gradient(90deg, #E8C97A, #B8923A);
+}
+.nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
+
+/* ── Cards ── */
+.servico-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   padding: 14px;
   margin-bottom: 10px;
-  cursor: pointer;
-  transition: border-color 0.15s;
+  box-shadow: 0 4px 16px -8px rgba(120,90,30,0.18);
   position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
 }
-.servico-card:active { background: var(--dark4); }
-.servico-card.highlight { border-color: rgba(201,168,76,0.35); }
-
-.servico-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
-.servico-prop { font-size: 15px; font-weight: 600; }
-.servico-tipo {
-  font-size: 10px; font-weight: 700;
-  background: var(--dark4);
-  color: var(--text-muted);
-  padding: 3px 8px; border-radius: 4px;
-  letter-spacing: 0.3px; text-transform: uppercase;
-  white-space: nowrap;
+.servico-card:active { transform: scale(0.99); }
+.servico-card.highlight::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--gold);
 }
+.servico-prop {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--text);
+  margin-top: 6px;
+}
+.servico-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.servico-meta { font-size: 12px; color: var(--text-soft); }
+.servico-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.staff-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 
-.servico-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.servico-meta { font-size: 12px; color: var(--text-muted); }
+/* ── Pills ── */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-family: var(--font-sans); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.pill.concluido { background: var(--green-soft); color: var(--green); }
+.pill.pendente  { background: var(--blue-soft); color: var(--blue); }
+.pill.agendado  { background: #F4E9C9; color: var(--gold-deep); }
+.pill.cancelado { background: var(--red-soft); color: var(--red); }
 
-.staff-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* ── Chips ── */
 .chip {
   display: inline-flex; align-items: center; gap: 5px;
-  background: var(--dark4);
-  border: 1px solid var(--border2);
-  border-radius: 20px;
-  padding: 4px 10px;
-  font-size: 11px; font-weight: 500;
+  background: var(--card-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px 3px 5px;
+  font-size: 11px; font-weight: 600; color: var(--text);
 }
-.chip-dot { width: 7px; height: 7px; border-radius: 50%; }
+.chip-dot { width: 16px; height: 16px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; font-weight: 800; }
 
-/* filtro buttons */
+/* ── Forms ── */
+.form-ctrl {
+  width: 100%; background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 12px; padding: 10px 14px;
+  font-family: var(--font-sans); font-size: 14px; color: var(--text);
+  outline: none; appearance: none;
+  transition: border-color 0.15s;
+}
+.form-ctrl:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,146,58,0.12); }
+.form-ctrl::placeholder { color: var(--text-muted); }
+.form-group { margin-bottom: 12px; }
+.form-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted);
+  display: block; margin-bottom: 5px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── Stats / KPI ── */
+.stats-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 4px 14px -8px rgba(120,90,30,0.18);
+  position: relative; overflow: hidden;
+}
+.stat-card.hero {
+  background: linear-gradient(155deg, #FFFCF3 0%, #F4E5BC 100%);
+  border-color: var(--border2);
+  box-shadow: 0 8px 22px -10px rgba(168,132,50,0.35);
+}
+.stat-val {
+  font-family: var(--font-serif);
+  font-weight: 600; font-size: 30px; line-height: 32px;
+  color: var(--text); letter-spacing: -0.01em;
+}
+.stat-lbl { font-size: 10.5px; font-weight: 600; color: var(--text-soft); margin-top: 4px; }
+.stat-sub { font-size: 9.5px; font-weight: 700; color: var(--gold-deep); margin-top: 1px; }
+
+/* ── Modals ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(30,24,16,0.55);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  background: var(--card);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-height: 92dvh;
+  overflow-y: auto;
+  transform: translateY(20px);
+  transition: transform 0.25s cubic-bezier(.32,.72,0,1);
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-drag {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: var(--border2); margin: 12px auto 0;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px 10px;
+}
+.modal-title {
+  font-family: var(--font-serif);
+  font-style: italic; font-weight: 600; font-size: 22px; color: var(--text);
+}
+.modal-close {
+  width: 30px; height: 30px; border-radius: 999px;
+  background: var(--card-alt); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-muted); font-size: 14px;
+}
+.modal-body { padding: 8px 20px 16px; }
+.modal-footer { padding: 12px 20px; display: flex; gap: 10px; border-top: 1px solid var(--border); }
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border2), transparent); margin: 12px 0; }
+
+/* ── Section labels ── */
+.section-lbl {
+  font-family: var(--font-serif);
+  font-style: italic; font-weight: 600; font-size: 20px;
+  color: var(--text); margin: 18px 0 10px;
+}
+
+/* ── Time tracker (in detail modal) ── */
+.time-tracker { background: var(--card-alt); border-radius: 14px; border: 1px solid var(--border); padding: 14px; margin-bottom: 12px; }
+.time-tracker-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+.time-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.time-inp-wrap { display: flex; flex-direction: column; gap: 4px; }
+.time-inp-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.time-inp { background: var(--card); border: 1px solid var(--border2); border-radius: 10px; padding: 9px 12px; font-family: var(--font-mono); font-size: 16px; color: var(--text); text-align: center; width: 100%; }
+.duration-display { display: flex; align-items: center; justify-content: space-between; }
+.duration-label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.duration-val { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--gold); }
+.staff-time-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.staff-av { width: 34px; height: 34px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 800; }
+.staff-info { flex: 1; }
+.staff-name-sm { font-size: 13px; font-weight: 700; color: var(--text); }
+.staff-hours { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.rate-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+.rate-lbl { font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.rate-inp { width: 70px; background: var(--card); border: 1px solid var(--border2); border-radius: 8px; padding: 7px 10px; font-family: var(--font-mono); font-size: 14px; color: var(--text); text-align: center; }
+
+/* ── Filtro buttons ── */
 .filtro-btn {
-  background: var(--dark3); border: 1px solid var(--border2);
-  border-radius: 20px; color: var(--text-muted);
-  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
-  padding: 5px 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 999px; color: var(--text-muted);
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  padding: 5px 14px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
   transition: all 0.15s;
 }
 .filtro-btn.active {
-  background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.4);
-  color: var(--gold);
+  background: #F4E9C9; border-color: rgba(184,146,58,0.4); color: var(--gold-deep);
 }
 
-/* status pills */
-.pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: 20px;
-  font-size: 11px; font-weight: 700;
-}
-.pill.concluido { background: rgba(76,175,125,0.15); color: var(--green); }
-.pill.pendente  { background: rgba(201,168,76,0.15);  color: var(--gold);  }
-.pill.agendado  { background: rgba(92,143,224,0.15);  color: var(--blue);  }
-.pill.cancelado { background: rgba(224,92,92,0.15);   color: var(--red);   }
-
-/* ── TIME TRACKER ── */
-.time-tracker {
-  background: var(--dark4);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px;
-  margin-top: 8px;
-}
-.time-tracker-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
-.staff-time-row {
-  display: flex; align-items: center;
-  background: var(--dark3);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  gap: 10px;
-}
-.staff-av { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--dark); background:linear-gradient(135deg,var(--gold),var(--gold-light)); flex-shrink:0; }
-.staff-info { flex:1; min-width:0; }
-.staff-name-sm { font-size:13px; font-weight:600; }
-.staff-hours { font-size:11px; color:var(--text-muted); margin-top:1px; }
-.staff-wage { font-size:14px; font-weight:700; color:var(--gold); white-space:nowrap; }
-
-.time-inputs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
-.time-inp-wrap { display:flex; flex-direction:column; gap:4px; }
-.time-inp-lbl { font-size:10px; font-weight:600; letter-spacing:0.8px; color:var(--text-muted); text-transform:uppercase; }
-.time-inp { background:var(--dark2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600; padding:10px 12px; outline:none; width:100%; text-align:center; }
-.time-inp:focus { border-color:var(--gold); }
-
-.duration-display {
-  display:flex; align-items:center; justify-content:space-between;
-  background:var(--gold-dim); border:1px solid var(--border);
-  border-radius:8px; padding:10px 14px; margin-top:10px;
-}
-.duration-label { font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.8px; }
-.duration-val { font-family:'Playfair Display',serif; font-size:20px; color:var(--gold); }
-
-/* wage rate input */
-.rate-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
-.rate-lbl { font-size:12px; color:var(--text-muted); white-space:nowrap; }
-.rate-inp {
-  background:var(--dark2); border:1px solid var(--border);
-  border-radius:8px; color:var(--gold); font-family:'DM Sans',sans-serif;
-  font-size:14px; font-weight:600; padding:8px 10px; outline:none;
-  width:80px; text-align:right;
-}
-.rate-unit { font-size:12px; color:var(--text-muted); }
-
-/* ── DATE PICKER ── */
-.date-pills { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px; scrollbar-width:none; }
-.date-pills::-webkit-scrollbar { display:none; }
-.date-pill {
-  flex-shrink:0;
-  display:flex; flex-direction:column; align-items:center;
-  background:var(--dark2); border:1px solid var(--border2);
-  border-radius:12px; padding:8px 12px; cursor:pointer; transition:all 0.15s;
-  min-width:52px;
-}
-.date-pill.active { background:var(--gold); border-color:var(--gold); }
-.date-pill.active .dp-num, .date-pill.active .dp-day { color:var(--dark); }
-.dp-day { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); }
-.dp-num { font-size:20px; font-weight:700; color:var(--text); line-height:1.1; }
-
-/* ── MODAL ── */
-.modal-overlay {
-  position: fixed; inset:0; z-index:200;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(6px);
-  display:flex; align-items:flex-end;
-  opacity:0; pointer-events:none;
-  transition: opacity 0.2s;
-}
-.modal-overlay.open { opacity:1; pointer-events:all; }
-.modal-sheet {
-  background: var(--dark2);
-  border: 1px solid var(--border);
-  border-radius: 20px 20px 0 0;
-  width:100%;
-  max-height: 90dvh;
-  overflow-y:auto;
-  transform: translateY(60px);
-  transition: transform 0.25s cubic-bezier(.22,.68,0,1.2);
-  padding-bottom: calc(24px + var(--safe-bottom));
-}
-.modal-overlay.open .modal-sheet { transform: translateY(0); }
-.modal-drag { width:40px; height:4px; background:var(--border); border-radius:2px; margin:12px auto 0; }
-.modal-head {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:16px 18px 12px;
-  border-bottom:1px solid var(--border2);
-}
-.modal-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:600; }
-.modal-close { background:var(--dark3); border:1px solid var(--border); border-radius:50%; width:30px; height:30px; color:var(--text-muted); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-.modal-body { padding:16px 18px; }
-.modal-footer { padding:12px 18px 0; display:flex; gap:10px; }
-
-/* ── FORMS ── */
-.form-group { margin-bottom:16px; }
-.form-label { display:block; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:7px; }
-.form-ctrl {
-  width:100%; background:var(--dark3); border:1px solid var(--border);
-  border-radius:10px; color:var(--text);
-  font-family:'DM Sans',sans-serif; font-size:15px;
-  padding:12px 14px; outline:none; transition:border-color 0.15s;
-  -webkit-appearance:none;
-}
-.form-ctrl:focus { border-color:var(--gold); }
-select.form-ctrl { background-image:none; }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-
-/* Staff multi-select chips */
-.staff-select-grid { display:flex; flex-wrap:wrap; gap:8px; }
+/* ── Staff chips ── */
 .staff-sel-chip {
-  display:inline-flex; align-items:center; gap:6px;
-  background:var(--dark3); border:1.5px solid var(--border);
-  border-radius:20px; padding:8px 14px;
-  font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s;
-  user-select:none;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 12px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--card);
+  transition: all 0.15s;
 }
-.staff-sel-chip.selected { border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
+.staff-sel-chip.selected { border-color: var(--gold); background: #F4E9C9; }
 
-/* ── STAFF SCREEN ── */
-.staff-card {
-  background:var(--dark2); border:1px solid var(--border);
-  border-radius:14px; padding:16px;
-  margin-bottom:12px; display:flex; align-items:center; gap:14px;
-  cursor:pointer; transition:border-color 0.15s;
+/* ── Conflict warning ── */
+.conflict-box {
+  background: #FEF3C7; border: 1px solid rgba(184,146,58,0.4);
+  border-radius: 10px; padding: 10px 12px; margin-top: -4px; margin-bottom: 8px;
+  font-size: 12px; color: var(--gold-deep);
 }
-.staff-av-lg { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:var(--dark); flex-shrink:0; }
-.staff-details { flex:1; }
-.staff-nm { font-size:15px; font-weight:600; }
-.staff-role { font-size:11px; color:var(--text-muted); margin-top:2px; }
-.staff-stats { text-align:right; }
-.staff-stat-val { font-family:'Playfair Display',serif; font-size:18px; color:var(--gold); }
-.staff-stat-lbl { font-size:10px; color:var(--text-muted); }
 
-/* Wage total row */
-.wage-row {
-  display:flex; align-items:center; justify-content:space-between;
-  background:var(--dark4); border-radius:10px; padding:12px 14px;
-  margin-top:6px;
-}
-.wage-row-lbl { font-size:12px; color:var(--text-muted); }
-.wage-row-val { font-size:16px; font-weight:700; color:var(--gold); }
-
-/* ── PDF SCREEN ── */
-.pdf-date-display {
-  background:var(--dark2); border:1px solid var(--border);
-  border-radius:12px; padding:14px 16px;
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:14px; cursor:pointer;
-}
-.pdf-summary-row {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:11px 0; border-bottom:1px solid var(--border2);
-}
-.pdf-summary-row:last-child { border-bottom:none; }
+/* ── PDF ── */
 .pdf-export-btn {
-  width:100%; padding:16px;
-  background:var(--gold); color:var(--dark);
-  border:none; border-radius:12px;
-  font-family:'DM Sans',sans-serif;
-  font-size:16px; font-weight:700; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; gap:10px;
-  margin-top:16px; transition: transform 0.1s;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px 18px; cursor: pointer; width: 100%;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 700; color: var(--text);
+  box-shadow: 0 4px 16px -8px rgba(120,90,30,0.18);
+  transition: transform 0.1s;
 }
-.pdf-export-btn:active { transform:scale(0.97); }
+.pdf-export-btn:active { transform: scale(0.98); }
+.pdf-summary-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
 
-/* ── SEARCH ── */
-.search-wrap {
-  display:flex; align-items:center; gap:10px;
-  background:var(--dark3); border:1px solid var(--border);
-  border-radius:10px; padding:10px 14px; margin-bottom:14px;
+/* ── Greeting ── */
+.greeting {
+  font-family: var(--font-serif);
+  font-style: italic; font-weight: 500;
+  font-size: 26px; line-height: 30px;
+  color: var(--text); padding: 4px 4px 16px;
 }
-.search-wrap input { background:none; border:none; outline:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; flex:1; }
-.search-wrap input::placeholder { color:var(--text-muted); }
+.greeting em { color: var(--gold-deep); font-style: normal; }
 
-/* ── DIVIDER ── */
-.divider { height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); opacity:0.2; margin:14px 0; }
+/* ── Calendar ── */
+.cal-card {
+  background: var(--card); border-radius: 18px;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px -8px rgba(120,90,30,0.18);
+  overflow: hidden; margin-bottom: 4px;
+}
 
-/* ── ANIMATIONS ── */
-@keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-.screen.active .scroll-body > * { animation: fadeUp 0.22s ease both; }
-.screen.active .scroll-body > *:nth-child(2) { animation-delay:0.04s; }
-.screen.active .scroll-body > *:nth-child(3) { animation-delay:0.08s; }
-.screen.active .scroll-body > *:nth-child(4) { animation-delay:0.12s; }
+/* ── Loading ── */
+.loading-overlay { position: fixed; inset: 0; background: linear-gradient(180deg, #F5E9C8, #DDC07F); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+.loading-spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--border2); border-top-color: var(--gold); animation: spin 0.8s linear infinite; margin-bottom: 14px; }
 
-/* Toast */
+/* ── Toast ── */
 .toast {
-  position:fixed; bottom:calc(var(--nav-h) + 12px + var(--safe-bottom)); left:16px; right:16px;
-  background:var(--dark2); border:1px solid var(--gold);
-  border-radius:12px; padding:14px 16px;
-  display:flex; align-items:center; gap:10px;
-  font-size:13px; font-weight:500; z-index:999;
-  animation:fadeUp 0.2s ease;
-  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--dark); color: #FFFDF7;
+  padding: 10px 20px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; font-family: var(--font-sans);
+  box-shadow: 0 8px 24px -8px rgba(30,24,16,0.35);
+  opacity: 0; transition: all 0.25s; z-index: 9000; white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Banner widget mensal ── */
+#widget-mensal {
+  background: linear-gradient(135deg, rgba(184,146,58,0.1), rgba(184,146,58,0.04));
+  border: 1px solid rgba(184,146,58,0.24);
+  border-radius: 16px; padding: 14px; margin-bottom: 14px;
 }
 
-/* Section label */
-.section-lbl { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; }
+/* ── Success overlay ── */
+.success-overlay {
+  position: fixed; inset: 0; background: rgba(255,253,247,0.95);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 8000; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.success-overlay.show { opacity: 1; pointer-events: all; }
 
-/* Progress bar */
-.prog-bar { height:5px; background:var(--dark3); border-radius:3px; overflow:hidden; margin-top:6px; }
-.prog-fill { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:3px; transition:width 0.4s; }
+/* ── Alerts screen ── */
+.alert-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 10px; }
 
-/* Grain */
-body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events:none; z-index:9999; opacity:0.5; }
-
-/* Scrollbar hidden mobile */
-::-webkit-scrollbar { display:none; }
+/* ── Animation ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+.screen.active .scroll-body > * { animation: fadeUp 0.22s ease both; }
+.screen.active .scroll-body > *:nth-child(2) { animation-delay: 0.04s; }
+.screen.active .scroll-body > *:nth-child(3) { animation-delay: 0.08s; }
+.screen.active .scroll-body > *:nth-child(4) { animation-delay: 0.12s; }
 </style>
 
 <link rel="manifest" href="#" id="pwa-manifest-g">
@@ -500,11 +438,11 @@ if ('serviceWorker' in navigator) {
   <div class="topbar">
     <div class="topbar-row">
       <div>
-        <div class="topbar-logo">★ Star's Domus</div>
-        <div class="topbar-sub" id="hoje-subtitle">Carregando...</div>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><defs><linearGradient id="sg" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="#E8C97A"/><stop offset="0.5" stop-color="#C9A84C"/><stop offset="1" stop-color="#8E6E22"/></linearGradient></defs><path d="M12 2.6l2.7 5.9 6.3.7-4.7 4.4 1.3 6.3L12 16.7l-5.6 3.2 1.3-6.3L3 9.2l6.3-.7L12 2.6z" fill="url(#sg)" stroke="#8E6E22" stroke-width="0.6" stroke-linejoin="round"/></svg>
+      <div><div class="topbar-title">Star<em>'</em>s Domus</div><div class="topbar-sub" id="hoje-subtitle">Carregando...</div></div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
-        <button id="pwa-install-btn" onclick="installPWA()" style="display:none;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;padding:6px 10px;cursor:pointer;align-items:center;gap:5px">
+        <button id="pwa-install-btn" onclick="installPWA()" style="display:none;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:8px;color:var(--gold);font-family:var(--font-sans);font-size:11px;font-weight:700;padding:6px 10px;cursor:pointer;align-items:center;gap:5px">
           ⬇ Instalar
         </button>
         <button class="topbar-btn" onclick="abrirNovoServico()">+ Serviço</button>
@@ -513,17 +451,21 @@ if ('serviceWorker' in navigator) {
   </div>
 
   <div class="scroll-body">
-    <!-- Stats hoje + Resumo mensal -->
+    <!-- Saudação + Stats 3-col -->
+    <div class="greeting">Bom dia, <em id="greeting-name">Gestor</em>.</div>
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-icon">◷</div>
+      <div class="stat-card hero">
         <div class="stat-val" id="stat-hoje">0</div>
         <div class="stat-lbl">Serviços hoje</div>
+        <div class="stat-sub" id="stat-sub-hoje"></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon">✓</div>
         <div class="stat-val" id="stat-concluidos">0</div>
         <div class="stat-lbl">Concluídos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-receita" style="font-size:20px">€0</div>
+        <div class="stat-lbl">Receita hoje</div>
       </div>
     </div>
 
@@ -535,15 +477,15 @@ if ('serviceWorker' in navigator) {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div style="text-align:center">
-          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text)" id="wid-total">—</div>
+          <div style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--text)" id="wid-total">—</div>
           <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Serviços</div>
         </div>
         <div style="text-align:center;border-left:1px solid var(--border2);border-right:1px solid var(--border2)">
-          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--blue)" id="wid-horas">—</div>
+          <div style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--blue)" id="wid-horas">—</div>
           <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Horas</div>
         </div>
         <div style="text-align:center">
-          <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--green)" id="wid-pagar">—</div>
+          <div style="font-family:var(--font-serif);font-size:22px;font-weight:700;color:var(--green)" id="wid-pagar">—</div>
           <div style="font-size:10px;color:var(--text-muted);margin-top:2px">A pagar</div>
         </div>
       </div>
@@ -910,7 +852,7 @@ if ('serviceWorker' in navigator) {
         <div id="p-foto-preview" style="display:none;margin-bottom:8px;border-radius:10px;overflow:hidden;height:140px;background:var(--dark3)">
           <img id="p-foto-img" style="width:100%;height:100%;object-fit:cover;display:block">
         </div>
-        <label style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--dark3);border:1.5px dashed var(--border);border-radius:10px;padding:14px;cursor:pointer;font-size:13px;color:var(--text-muted);font-family:'DM Sans',sans-serif" id="p-foto-label">
+        <label style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--dark3);border:1.5px dashed var(--border);border-radius:10px;padding:14px;cursor:pointer;font-size:13px;color:var(--text-muted);font-family:var(--font-sans)" id="p-foto-label">
           <span style="font-size:20px">📷</span>
           <span id="p-foto-label-text">Clica para escolher foto</span>
           <input type="file" id="p-foto-input" accept="image/*" style="display:none" onchange="handlePropFoto(event)">
@@ -1251,6 +1193,15 @@ function updateStats() {
   const s=getServicosForDate(todayStr);
   document.getElementById('stat-hoje').textContent=s.length;
   document.getElementById('stat-concluidos').textContent=s.filter(x=>x.estado==='concluido').length;
+  // Receita de hoje
+  const receitaHoje = s.filter(x=>x.estado==='concluido').reduce((a,sv)=>{
+    return a + sv.staff.reduce((b,sid)=>{const st=getStaff(sid);return b+(st?minsToHDecimal(calcMins(sv.inicio,sv.fim))*st.taxa:0);},0);
+  },0);
+  const rEl = document.getElementById('stat-receita');
+  if(rEl) rEl.textContent = '€'+receitaHoje.toFixed(0);
+  const subEl = document.getElementById('stat-sub-hoje');
+  const emCurso = s.filter(x=>x.estado==='pendente').length;
+  if(subEl) subEl.textContent = emCurso ? emCurso+' em curso' : '';
   updateWidgetMensal();
 }
 
@@ -1307,8 +1258,8 @@ function setFiltroStaff(btn) {
   dd.innerHTML = `
     <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);padding:4px 8px;margin-bottom:4px">Filtrar por funcionário</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 4px 6px">
-      <button onclick="aplicarFiltroStaff(null,this)" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:20px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer">Todos</button>
-      ${staff.map(s => `<button onclick="aplicarFiltroStaff('${s.id}',this)" style="background:rgba(${hexToRgb(s.cor)},0.1);border:1px solid rgba(${hexToRgb(s.cor)},0.3);border-radius:20px;color:${s.cor};font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer">${s.nome.split(' ')[0]}</button>`).join('')}
+      <button onclick="aplicarFiltroStaff(null,this)" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:20px;color:var(--gold);font-family:var(--font-sans);font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer">Todos</button>
+      ${staff.map(s => `<button onclick="aplicarFiltroStaff('${s.id}',this)" style="background:rgba(${hexToRgb(s.cor)},0.1);border:1px solid rgba(${hexToRgb(s.cor)},0.3);border-radius:20px;color:${s.cor};font-family:var(--font-sans);font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer">${s.nome.split(' ')[0]}</button>`).join('')}
     </div>`;
   document.body.appendChild(dd);
   setTimeout(() => document.addEventListener('click', function handler(e) {
@@ -1521,9 +1472,9 @@ function openDetalhe(id) {
   document.getElementById('det-footer').innerHTML=`
     <div style="width:100%;display:flex;flex-direction:column;gap:8px">
       <div style="display:flex;gap:8px;margin-bottom:4px">
-        <button onclick="verChecklist('${id}')" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📋 Checklist</button>
-        <button onclick="verFotos('${id}')" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📷 Fotos</button>
-        <button onclick="abrirDuplicar('${id}')" style="flex:1;background:rgba(92,143,224,0.08);border:1px solid rgba(92,143,224,0.3);border-radius:10px;color:var(--blue);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">⧉ Duplicar</button>
+        <button onclick="verChecklist('${id}')" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--text-muted);font-family:var(--font-sans);font-size:12px;font-weight:600;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📋 Checklist</button>
+        <button onclick="verFotos('${id}')" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--text-muted);font-family:var(--font-sans);font-size:12px;font-weight:600;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">📷 Fotos</button>
+        <button onclick="abrirDuplicar('${id}')" style="flex:1;background:rgba(92,143,224,0.08);border:1px solid rgba(92,143,224,0.3);border-radius:10px;color:var(--blue);font-family:var(--font-sans);font-size:12px;font-weight:600;padding:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">⧉ Duplicar</button>
       </div>
       <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2px">📋 Enviar Ordem de Serviço</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">${waButtons}</div>
@@ -1798,8 +1749,8 @@ function showPushBanner() {
       <div style="font-size:11px;color:var(--text-muted)">Recebe alertas quando a equipa inicia ou termina serviços</div>
     </div>
     <div style="display:flex;gap:6px;flex-shrink:0">
-      <button onclick="document.getElementById('push-banner').remove();localStorage.setItem('push-dismissed','1')" style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:7px 10px;cursor:pointer">Agora não</button>
-      <button onclick="ativarPush()" style="background:linear-gradient(135deg,var(--gold),#E8C97A);border:none;border-radius:8px;color:var(--dark);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;padding:7px 12px;cursor:pointer">Ativar</button>
+      <button onclick="document.getElementById('push-banner').remove();localStorage.setItem('push-dismissed','1')" style="background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:var(--font-sans);font-size:11px;font-weight:600;padding:7px 10px;cursor:pointer">Agora não</button>
+      <button onclick="ativarPush()" style="background:linear-gradient(135deg,var(--gold),#E8C97A);border:none;border-radius:8px;color:var(--dark);font-family:var(--font-sans);font-size:11px;font-weight:700;padding:7px 12px;cursor:pointer">Ativar</button>
     </div>`;
   // Só mostra se não foi dispensado antes
   if (localStorage.getItem('push-dismissed')) return;
@@ -2164,13 +2115,13 @@ function openStaffDet(id) {
     <div class="rate-row" style="margin-bottom:16px"><span class="rate-lbl">Alterar taxa (€/h):</span><input type="number" class="rate-inp" id="staff-taxa-${id}" value="${st.taxa}" step="0.5" min="1"><button onclick="updateStaffTaxa('${id}')" style="background:var(--gold);border:none;border-radius:8px;padding:8px 14px;color:var(--dark);font-weight:700;font-size:12px;cursor:pointer">Aplicar</button></div>
     <div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">📱 Telemóvel</div><div style="display:flex;gap:8px;align-items:center"><input class="form-ctrl" id="staff-tel-${id}" value="${st.tel||''}" placeholder="351912345678" style="flex:1;font-size:14px"><button onclick="updateStaffTel('${id}')" style="background:var(--gold);border:none;border-radius:8px;padding:10px 14px;color:var(--dark);font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">Guardar</button></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
-      <div style="background:var(--dark3);border-radius:10px;padding:12px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--gold)">${mine.length}</div><div style="font-size:10px;color:var(--text-muted)">Serviços</div></div>
-      <div style="background:var(--dark3);border-radius:10px;padding:12px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--blue)">${minsToHStr(mins)}</div><div style="font-size:10px;color:var(--text-muted)">Horas</div></div>
-      <div style="background:var(--dark3);border-radius:10px;padding:12px;text-align:center"><div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--green)">€${wage.toFixed(2)}</div><div style="font-size:10px;color:var(--text-muted)">A receber</div></div>
+      <div style="background:var(--dark3);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--font-serif);font-size:20px;color:var(--gold)">${mine.length}</div><div style="font-size:10px;color:var(--text-muted)">Serviços</div></div>
+      <div style="background:var(--dark3);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--font-serif);font-size:20px;color:var(--blue)">${minsToHStr(mins)}</div><div style="font-size:10px;color:var(--text-muted)">Horas</div></div>
+      <div style="background:var(--dark3);border-radius:10px;padding:12px;text-align:center"><div style="font-family:var(--font-serif);font-size:20px;color:var(--green)">€${wage.toFixed(2)}</div><div style="font-size:10px;color:var(--text-muted)">A receber</div></div>
     </div>
     <div class="time-tracker-title">Serviços concluídos</div>
     ${!mine.length?'<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">Sem serviços concluídos</div>':mine.map(s=>{const p=getProp(s.propId),m=calcMins(s.inicio,s.fim);return`<div class="staff-time-row"><div style="font-size:20px">${p?.emoji||'🏠'}</div><div class="staff-info"><div class="staff-name-sm">${p?.nome||'—'}</div><div class="staff-hours">${formatDateShort(s.data)} · ${s.inicio}–${s.fim}</div></div><div class="staff-wage">${minsToHStr(m)} <span style="color:var(--green);font-size:11px">€${(minsToHDecimal(m)*st.taxa).toFixed(2)}</span></div></div>`;}).join('')}
-    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border2)"><button onclick="confirmDeleteStaff('${id}')" style="width:100%;background:rgba(224,92,92,0.08);border:1px solid rgba(224,92,92,0.3);border-radius:10px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:13px;cursor:pointer">🗑 Eliminar Funcionário</button></div>`;
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border2)"><button onclick="confirmDeleteStaff('${id}')" style="width:100%;background:rgba(224,92,92,0.08);border:1px solid rgba(224,92,92,0.3);border-radius:10px;color:var(--red);font-family:var(--font-sans);font-size:14px;font-weight:700;padding:13px;cursor:pointer">🗑 Eliminar Funcionário</button></div>`;
   openModal('modal-staff-det');
 }
 function updateStaffTel(id) {
@@ -2235,9 +2186,9 @@ function renderProps(filter='') {
       ${fotoHeader}
       <div class="servico-row"><span style="font-size:13px">👤</span><span class="servico-meta">${p.dono}${p.tel?' · '+p.tel:''}</span></div>
       <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">
-        <button onclick="verHistoricoProp('${p.id}')" style="flex:1;background:rgba(92,143,224,0.08);border:1px solid rgba(92,143,224,0.25);border-radius:8px;color:var(--blue);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:8px;cursor:pointer">📅 Histórico</button>
-        <button onclick="editProp('${p.id}')" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:8px;cursor:pointer">✎ Editar</button>
-        <button onclick="confirmDeleteProp('${p.id}')" style="flex:1;background:rgba(224,92,92,0.08);border:1px solid rgba(224,92,92,0.3);border-radius:8px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:8px;cursor:pointer">🗑</button>
+        <button onclick="verHistoricoProp('${p.id}')" style="flex:1;background:rgba(92,143,224,0.08);border:1px solid rgba(92,143,224,0.25);border-radius:8px;color:var(--blue);font-family:var(--font-sans);font-size:12px;font-weight:600;padding:8px;cursor:pointer">📅 Histórico</button>
+        <button onclick="editProp('${p.id}')" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-family:var(--font-sans);font-size:12px;font-weight:600;padding:8px;cursor:pointer">✎ Editar</button>
+        <button onclick="confirmDeleteProp('${p.id}')" style="flex:1;background:rgba(224,92,92,0.08);border:1px solid rgba(224,92,92,0.3);border-radius:8px;color:var(--red);font-family:var(--font-sans);font-size:12px;font-weight:600;padding:8px;cursor:pointer">🗑</button>
       </div></div>`;
   }).join('');
 }
@@ -2392,7 +2343,7 @@ function renderAlertas() {
           <div style="background:var(--dark3);border-radius:8px;padding:10px 12px;margin-bottom:10px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Propriedade</div><div style="font-size:13px;font-weight:600">${propNome}</div></div>
           <div style="background:var(--dark3);border-radius:8px;padding:10px 12px;margin-bottom:10px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px">Justificação</div><div style="font-size:13px;font-style:italic;color:var(--text-muted)">"${a.justificacao||a.justif||'—'}"</div></div>
           ${photo?`<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px">📷 Foto</div><img src="${photo}" style="width:100%;border-radius:10px;border:1px solid var(--border);max-height:220px;object-fit:cover;display:block;cursor:pointer" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'220px':'none'"></div>`:`<div style="background:rgba(224,92,92,0.08);border:1px dashed rgba(224,92,92,0.3);border-radius:8px;padding:12px;margin-bottom:10px;text-align:center"><div style="font-size:20px;margin-bottom:4px">📷</div><div style="font-size:12px;color:var(--red);font-weight:600">Sem foto</div></div>`}
-          <div style="display:flex;gap:8px;align-items:center"><span style="background:${a.foto_url?'rgba(76,175,125,0.15)':'rgba(224,92,92,0.15)'};color:${a.foto_url?'var(--green)':'var(--red)'};font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px">${a.foto_url?'📷 Foto submetida':'❌ Sem foto'}</span>${a.distancia_m?`<span style="font-size:11px;color:var(--text-muted)">${a.distancia_m}m</span>`:''}<button onclick="resolverAlerta('${a.id}')" style="margin-left:auto;background:rgba(76,175,125,0.13);border:1px solid rgba(76,175,125,0.3);border-radius:8px;color:var(--green);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">✓ Resolver</button></div>
+          <div style="display:flex;gap:8px;align-items:center"><span style="background:${a.foto_url?'rgba(76,175,125,0.15)':'rgba(224,92,92,0.15)'};color:${a.foto_url?'var(--green)':'var(--red)'};font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px">${a.foto_url?'📷 Foto submetida':'❌ Sem foto'}</span>${a.distancia_m?`<span style="font-size:11px;color:var(--text-muted)">${a.distancia_m}m</span>`:''}<button onclick="resolverAlerta('${a.id}')" style="margin-left:auto;background:rgba(76,175,125,0.13);border:1px solid rgba(76,175,125,0.3);border-radius:8px;color:var(--green);font-family:var(--font-sans);font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer">✓ Resolver</button></div>
         </div>
       </div>`;
     }).join('');
@@ -2682,12 +2633,12 @@ document.addEventListener('DOMContentLoaded', init);
     <div class="modal-drag"></div>
     <div style="padding:20px 20px 8px;text-align:center">
       <div style="font-size:36px;margin-bottom:10px">🗑</div>
-      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin-bottom:8px" id="confirm-del-title">Eliminar?</div>
+      <div style="font-family:var(--font-serif);font-size:18px;font-weight:700;margin-bottom:8px" id="confirm-del-title">Eliminar?</div>
       <div style="font-size:13px;color:var(--text-muted);line-height:1.5" id="confirm-del-msg"></div>
     </div>
     <div style="display:flex;gap:10px;padding:16px 18px 24px">
-      <button onclick="closeModal('modal-confirm-del');_pendingDeleteFn=null" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;padding:13px;cursor:pointer">Cancelar</button>
-      <button onclick="execDelete()" style="flex:1;background:rgba(224,92,92,0.15);border:1.5px solid rgba(224,92,92,0.5);border-radius:10px;color:var(--red);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:13px;cursor:pointer">Eliminar</button>
+      <button onclick="closeModal('modal-confirm-del');_pendingDeleteFn=null" style="flex:1;background:var(--dark3);border:1px solid var(--border);border-radius:10px;color:var(--text-muted);font-family:var(--font-sans);font-size:14px;font-weight:600;padding:13px;cursor:pointer">Cancelar</button>
+      <button onclick="execDelete()" style="flex:1;background:rgba(224,92,92,0.15);border:1.5px solid rgba(224,92,92,0.5);border-radius:10px;color:var(--red);font-family:var(--font-sans);font-size:14px;font-weight:700;padding:13px;cursor:pointer">Eliminar</button>
     </div>
   </div>
 </div>
