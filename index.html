@@ -1773,7 +1773,7 @@ async function saveServico() {
   if(!sel.length){showToast('Seleciona pelo menos um funcionário','⚠');return;}
   const data=document.getElementById('f-data').value||todayStr;
   const inicio=document.getElementById('f-inicio').value;
-  const fim=document.getElementById('f-fim').value || '';
+  const fim=document.getElementById('f-fim').value || null;
   const tipo=document.getElementById('f-tipo').value;
   const estado=document.getElementById('f-estado').value;
   const descricao=document.getElementById('f-desc')?.value||'';
