@@ -1773,7 +1773,7 @@ async function saveServico() {
   if(!sel.length){showToast('Seleciona pelo menos um funcionário','⚠');return;}
   const data=document.getElementById('f-data').value||todayStr;
   const inicio=document.getElementById('f-inicio').value;
-  const fim=document.getElementById('f-fim').value || null;
+  const fim=document.getElementById('f-fim').value || '';
   const tipo=document.getElementById('f-tipo').value;
   const estado=document.getElementById('f-estado').value;
   const descricao=document.getElementById('f-desc')?.value||'';
@@ -1802,9 +1802,12 @@ async function saveServico() {
   try {
     let criados = 0;
     for (const d of datas) {
-      const [novo] = await supa.post('servicos', {prop_id:propId, tipo, data:d, inicio, fim:fim||null, estado, descricao, empresa, observacoes:obs});
+      const resServico = await supa.post('servicos', {prop_id:propId, tipo, data:d, inicio, fim: fim||'', estado, empresa, observacoes: obs||''});
+      // supa.post returns array; handle empty response
+      const novo = Array.isArray(resServico) ? resServico[0] : resServico;
+      if (!novo || !novo.id) throw new Error('Supabase não devolveu o serviço criado. Verifica as permissões RLS da tabela servicos.');
       await Promise.all(sel.map(sid => supa.post('servico_staff', {servico_id:novo.id, staff_id:sid})));
-      servicos.push({id:novo.id, propId:novo.prop_id, tipo:novo.tipo, data:novo.data, inicio:novo.inicio?novo.inicio.slice(0,5):'', fim:novo.fim?novo.fim.slice(0,5):'', estado:novo.estado, desc:novo.descricao||'', obs:novo.observacoes||'', empresa:novo.empresa||'', staff:sel});
+      servicos.push({id:novo.id, propId:novo.prop_id, tipo:novo.tipo, data:novo.data, inicio:novo.inicio?novo.inicio.slice(0,5):'', fim:novo.fim?novo.fim.slice(0,5):'', estado:novo.estado, obs:novo.observacoes||'', empresa:novo.empresa||'', staff:sel, km:novo.km||''});
       criados++;
     }
     closeModal('modal-novo');
@@ -1827,7 +1830,15 @@ async function saveServico() {
     if(title) title.textContent = 'Novo Serviço';
     renderServiceList(); updateStats(); buildCalendar();
     showToast(criados > 1 ? `${criados} serviços criados!` : 'Serviço criado!');
-  } catch(e){showToast('Erro ao criar','⚠');console.error(e);}
+  } catch(e) {
+    const msg = e?.message || String(e) || 'erro desconhecido';
+    showToast('Erro: '+msg.slice(0,80), '⚠');
+    console.error('saveServico error:', e, msg);
+    // Show full error in alert for debugging
+    if (msg.includes('violates') || msg.includes('policy') || msg.includes('permission')) {
+      alert('Erro de permissões Supabase:\n' + msg);
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════
