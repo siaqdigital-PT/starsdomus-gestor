@@ -1773,7 +1773,7 @@ async function saveServico() {
   if(!sel.length){showToast('Seleciona pelo menos um funcionário','⚠');return;}
   const data=document.getElementById('f-data').value||todayStr;
   const inicio=document.getElementById('f-inicio').value;
-  const fim=document.getElementById('f-fim').value || null;
+  const fimRaw=document.getElementById('f-fim').value; const fim = (fimRaw && fimRaw.trim()) ? fimRaw : null;
   const tipo=document.getElementById('f-tipo').value;
   const estado=document.getElementById('f-estado').value;
   const descricao=document.getElementById('f-desc')?.value||'';
@@ -1802,7 +1802,9 @@ async function saveServico() {
   try {
     let criados = 0;
     for (const d of datas) {
-      const resServico = await supa.post('servicos', {prop_id:propId, tipo, data:d, inicio, fim: fim||null, estado, empresa, observacoes: obs||null});
+      const payload = {prop_id:propId, tipo, data:d, inicio, fim: fim||null, estado, empresa, observacoes: obs||null};
+      console.log('PAYLOAD ENVIADO:', JSON.stringify(payload));
+      const resServico = await supa.post('servicos', payload);
       // supa.post returns array; handle empty response
       const novo = Array.isArray(resServico) ? resServico[0] : resServico;
       if (!novo || !novo.id) throw new Error('Supabase não devolveu o serviço criado. Verifica as permissões RLS da tabela servicos.');
@@ -2014,7 +2016,7 @@ function updateConflictWarning() {
   const sel = [...document.querySelectorAll('#f-staff-grid .selected')].map(el=>el.dataset.sid);
   const data = document.getElementById('f-data')?.value || todayStr;
   const inicio = document.getElementById('f-inicio')?.value || '';
-  const fim = document.getElementById('f-fim')?.value || '';
+  const fim = document.getElementById('f-fim')?.value || null;
   const warn = document.getElementById('conflict-warning');
   const detail = document.getElementById('conflict-detail');
   if (!warn || !detail) return;
