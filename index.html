@@ -1802,7 +1802,7 @@ async function saveServico() {
   try {
     let criados = 0;
     for (const d of datas) {
-      const resServico = await supa.post('servicos', {prop_id:propId, tipo, data:d, inicio, fim: fim||'', estado, empresa, observacoes: obs||''});
+      const resServico = await supa.post('servicos', {prop_id:propId, tipo, data:d, inicio, fim: fim||null, estado, empresa, observacoes: obs||null});
       // supa.post returns array; handle empty response
       const novo = Array.isArray(resServico) ? resServico[0] : resServico;
       if (!novo || !novo.id) throw new Error('Supabase não devolveu o serviço criado. Verifica as permissões RLS da tabela servicos.');
