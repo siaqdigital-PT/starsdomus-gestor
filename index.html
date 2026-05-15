@@ -785,7 +785,10 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Propriedade</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <label class="form-label" style="margin:0">Propriedade</label>
+          <button type="button" onclick="abrirNovaPropsInline()" style="background:none;border:none;color:var(--gold-deep);font-family:var(--font-sans);font-size:11px;font-weight:700;cursor:pointer;padding:0;display:flex;align-items:center;gap:3px">+ Nova casa</button>
+        </div>
         <select class="form-ctrl" id="f-prop">
           <option value="">Selecionar...</option>
         </select>
@@ -1031,6 +1034,31 @@ let staff = [], propriedades = [], servicos = [];
 let selectedDate, todayStr;
 const today = new Date();
 
+async function dragServico(event, servId) {
+  event.dataTransfer.setData('servId', servId);
+  event.dataTransfer.effectAllowed = 'move';
+}
+
+async function dropServico(event, novaData) {
+  event.preventDefault();
+  event.currentTarget.style.outline = '';
+  const servId = event.dataTransfer.getData('servId');
+  if (!servId || !novaData) return;
+  const s = servicos.find(x=>x.id===servId);
+  if (!s || s.data===novaData) return;
+  const dataAnterior = s.data;
+  s.data = novaData;
+  renderServiceList(); updateStats(); buildCalendar();
+  try {
+    await supa.patch('servicos', servId, { data: novaData });
+    showToast(`Movido para ${formatDateShort(novaData)}`, '📅');
+  } catch(e) {
+    s.data = dataAnterior;
+    renderServiceList(); updateStats(); buildCalendar();
+    showToast('Erro ao mover serviço', '⚠');
+  }
+}
+
 function updateGreeting() {
   const h = new Date().getHours();
   const word = h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite';
@@ -1089,7 +1117,7 @@ function mapServico(r) {
     if(!existing) staff.push({id:s.id,nome:s.nome,iniciais:s.iniciais,cor:s.cor,taxa:parseFloat(s.taxa)||8.5,tel:'',pin:'1234'});
     // Don't overwrite existing staff — their taxa may have been updated this session
   });
-  return { id:r.id, propId:r.prop_id, tipo:r.tipo, data:r.data, inicio:(r.inicio||'').slice(0,5), fim:(r.fim||'').slice(0,5), estado:r.estado, desc:r.descricao||'', obs:r.observacoes||'', empresa:r.empresa||'', staff:staffArr };
+  return { id:r.id, propId:r.prop_id, tipo:r.tipo, data:r.data, inicio:(r.inicio||'').slice(0,5), fim:(r.fim||'').slice(0,5), estado:r.estado, desc:r.descricao||'', obs:r.observacoes||'', empresa:r.empresa||'', staff:staffArr, km:r.km||'', inicio_real:r.inicio_real||null, fim_real:r.fim_real||null, duracao_min:r.duracao_min||null };
 }
 
 async function loadAllData() {
@@ -1119,9 +1147,12 @@ let _prevEstados = {};
 
 function setupRealtime() {
   supa.realtime('servicos', async ()=>{
-    const from=addDays(todayStr,-60),to=addDays(todayStr,30);
-    const raw=await supa.get('v_servicos',`?data=gte.${from}&data=lte.${to}&order=data,inicio`);
-    const updated=raw.map(mapServico);
+    // Debounce: evita 48 SELECTs em cascata ao criar recorrência
+    clearTimeout(window._realtimeDebounce);
+    window._realtimeDebounce = setTimeout(async () => {
+      const from=addDays(todayStr,-60),to=addDays(todayStr,30);
+      const raw=await supa.get('v_servicos',`?data=gte.${from}&data=lte.${to}&order=data,inicio`);
+      const updated=raw.map(mapServico);
 
     // Detect state changes → pendente (serviço iniciado)
     updated.forEach(s => {
@@ -1271,7 +1302,7 @@ function buildCalendar() {
       }
     }
 
-    html += `<div onclick="selectDay('${ds}')" style="cursor:pointer;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:center;min-height:38px;${cellStyle}">
+    html += `<div onclick="selectDay('${ds}')" ondragover="event.preventDefault();this.style.outline='2px solid var(--gold)'" ondragleave="this.style.outline=''" ondrop="dropServico(event,'${ds}')" style="cursor:pointer;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:center;min-height:38px;${cellStyle}">
       <span style="${numStyle};line-height:1">${d}</span>
       ${content || '<div style="height:8px"></div>'}
     </div>`;
@@ -1431,13 +1462,14 @@ function renderServiceList() {
   const empresaLine = { gereviana:'gereviana', azevim:'azevim', outra:'outra', '':'' };
   list.innerHTML = servs.map(s => {
     const prop = getProp(s.propId);
+    const draggable = s.estado !== 'concluido';
     const chips = s.staff.map(sid => { const st = getStaff(sid); return st ? `<span class="chip"><span class="chip-dot" style="background:${st.cor}">${st.iniciais||st.nome[0]}</span>${st.nome.split(' ')[0]}</span>` : ''; }).join('');
     const horario = s.inicio ? (s.fim ? `${s.inicio}–${s.fim}` : `${s.inicio}→`) : '';
     const durStr = s.inicio && s.fim ? ` · ${minsToHStr(calcMins(s.inicio,s.fim))}` : '';
     const lineClass = empresaLine[s.empresa||''] || '';
     const metaParts = [prop?.nome||'—', s.tipo].filter(Boolean);
     const obsHtml = s.obs ? `<div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:3px">${s.obs}</div>` : '';
-    return `<div class="servico-entry" onclick="openDetalhe('${s.id}')">
+    return `<div class="servico-entry" onclick="openDetalhe('${s.id}')" ${draggable?`draggable="true" ondragstart="dragServico(event,'${s.id}')" style="cursor:grab"`:''}>`
       <div class="se-time"><div class="se-time-val">${s.inicio||'—'}</div>${s.fim?`<div class="se-time-val" style="color:var(--text-muted)">${s.fim}</div>`:''}</div>
       <div class="se-line ${lineClass}"></div>
       <div class="se-body">
@@ -1570,6 +1602,14 @@ function openDetalhe(id) {
       <input type="date" class="form-ctrl" id="det-data-${id}" value="${s.data}">
     </div>
 
+    ${s.inicio_real ? `<div style="background:rgba(76,175,125,0.08);border:1px solid rgba(76,175,125,0.2);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--text-soft)">
+      <div style="font-weight:700;color:var(--green);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">⏱ Tempos Reais</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div><span style="color:var(--text-muted)">Iniciou:</span> <strong>${new Date(s.inicio_real).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}</strong></div>
+        ${s.fim_real ? `<div><span style="color:var(--text-muted)">Terminou:</span> <strong>${new Date(s.fim_real).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}</strong></div>` : ''}
+        ${s.duracao_min ? `<div><span style="color:var(--text-muted)">Duração real:</span> <strong>${Math.floor(s.duracao_min/60)}h${String(s.duracao_min%60).padStart(2,'0')}min</strong></div>` : ''}
+      </div>
+    </div>` : ''}
     <div class="time-tracker"><div class="time-tracker-title">⏱ Registo de Tempo</div>
       <div class="time-inputs">
         <div class="time-inp-wrap"><div class="time-inp-lbl">Entrada</div><input type="time" class="time-inp" id="ti-inicio-${id}" value="${s.inicio}" oninput="recalcTime('${id}')"></div>
@@ -1971,7 +2011,7 @@ async function enviarLembretes() {
       new Notification(`🔔 Lembrete — Serviço amanhã (${formatDateShort(amanha)})`, { body: corpo });
     }
     // Guardar na fila para o staff receber também
-    supaPost('push_notifications', {
+    supa.post('push_notifications', {
       tipo: 'lembrete', servico_id: s.id, staff_id: null,
       titulo: `🔔 Lembrete — ${prop?.nome||'Serviço'} amanhã`,
       corpo, enviado: false
@@ -2323,7 +2363,7 @@ async function saveStaff() {
 }
 function confirmDeleteStaff(id) {
   const st=getStaff(id); if(!st) return;
-  openConfirmDelete(`Eliminar "${st.nome}"?`,servicos.some(s=>s.staff.includes(id))?'Tem serviços associados.':'Esta ação não pode ser revertida.',()=>deleteStaff(id));
+  openConfirmDelete(`Eliminar "${st.nome}"?`,servicos.some(s=>s.staff.includes(id))?'Tem serviços associados.':'O registo será desativado (pode ser recuperado na base de dados).',()=>deleteStaff(id));
 }
 async function deleteStaff(id) {
   try{await supa.patch('staff',id,{ativo:false});staff=staff.filter(s=>s.id!==id);servicos.forEach(s=>{s.staff=s.staff.filter(sid=>sid!==id);});closeModal('modal-staff-det');renderStaff();buildStaffGrid();showToast('Eliminado','🗑');}catch(e){showToast('Erro','⚠');}
@@ -2379,7 +2419,7 @@ function abrirNovoServico() {
   document.getElementById('f-estado').value   = 'agendado';
   document.getElementById('f-inicio').value   = '09:00';
   document.getElementById('f-fim').value      = '';
-  document.getElementById('f-data').value     = todayStr;
+  document.getElementById('f-data').value     = selectedDate || todayStr;
   document.getElementById('f-empresa').value  = '';
   const descEl = document.getElementById('f-desc'); if(descEl) descEl.value = '';
   const obsEl  = document.getElementById('f-obs');  if(obsEl)  obsEl.value  = '';
@@ -2392,6 +2432,16 @@ function abrirNovoServico() {
   if(title) title.textContent = 'Novo Serviço';
   openModal('modal-novo');
 }
+
+function abrirNovaPropsInline() {
+  // Close modal-novo temporarily, open props modal, then reopen
+  closeModal('modal-novo');
+  setTimeout(() => {
+    _returnToNovoServico = true;
+    abrirNovaProps();
+  }, 300);
+}
+let _returnToNovoServico = false;
 
 function abrirNovaProps() {
   ['p-nome','p-morada','p-dono','p-tel','p-notas'].forEach(id => {
@@ -2470,12 +2520,23 @@ async function saveProp() {
       await supa.patch('propriedades', nova.id, {foto_url: fotoUrl});
       nova.foto_url = fotoUrl;
     }
-    propriedades.push({id:nova.id,...body,foto_url:fotoUrl||''});
+    const novaProp = {id:nova.id,...body,foto_url:fotoUrl||''};
+    propriedades.push(novaProp);
     closeModal('modal-prop');
     renderProps(); buildPropSelect();
     showToast('Propriedade adicionada!');
     ['p-nome','p-morada','p-dono','p-tel','p-emoji','p-notas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     resetPropFoto();
+    if (_returnToNovoServico) {
+      _returnToNovoServico = false;
+      setTimeout(() => {
+        openModal('modal-novo');
+        setTimeout(() => {
+          const sel = document.getElementById('f-prop');
+          if(sel && novaProp.id) { sel.value = novaProp.id; sel.dispatchEvent(new Event('change')); }
+        }, 150);
+      }, 350);
+    }
   } catch(e){showToast('Erro ao adicionar','⚠');console.error(e);}
 }
 
@@ -2566,6 +2627,7 @@ async function resolverAlerta(id) {
   loadAlertas(); renderAlertas(); showToast('Alerta resolvido','✓');
 }
 async function clearAlerts() {
+  if(!confirm("Limpar todos os alertas? Esta ação não pode ser revertida.")) return;
   const logs=window._geoLogs||[];
   try{await Promise.all(logs.map(a=>supa.patch('geo_alertas',a.id,{resolvido:true})));}catch(e){localStorage.removeItem('geo_alerts');}
   loadAlertas(); renderAlertas(); showToast('Alertas limpos');
@@ -2802,7 +2864,8 @@ async function init() {
   setupRealtime();
   initPushGestor();
   pollPushEvents(); // poll imediato ao abrir
-  setInterval(pollPushEvents, 10000); // poll a cada 10s
+  setInterval(pollPushEvents, 30000); // poll backup a cada 30s
+  supa.realtime("push_notifications", ()=>pollPushEvents()); // realtime primário
   // Lembretes diários — verificar às 20h ou ao abrir a app
   setTimeout(enviarLembretes, 5000);
 }
