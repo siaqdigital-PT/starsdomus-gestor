@@ -1179,7 +1179,8 @@ function setupRealtime() {
     });
 
     servicos=updated; renderServiceList(); updateStats(); buildCalendar();
-  });
+    }, 800); // debounce
+    });
   supa.realtime('geo_alertas', ()=>{ loadAlertas(); if(document.getElementById('screen-alertas').classList.contains('active')) renderAlertas(); });
 }
 
@@ -1469,7 +1470,8 @@ function renderServiceList() {
     const lineClass = empresaLine[s.empresa||''] || '';
     const metaParts = [prop?.nome||'—', s.tipo].filter(Boolean);
     const obsHtml = s.obs ? `<div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:3px">${s.obs}</div>` : '';
-    return `<div class="servico-entry" onclick="openDetalhe('${s.id}')" ${draggable?`draggable="true" ondragstart="dragServico(event,'${s.id}')" style="cursor:grab"`:''}>`
+    const dragAttrs = draggable ? `draggable="true" ondragstart="dragServico(event,'${s.id}')" style="cursor:grab"` : '';
+    return `<div class="servico-entry" onclick="openDetalhe('${s.id}')" ${dragAttrs}>
       <div class="se-time"><div class="se-time-val">${s.inicio||'—'}</div>${s.fim?`<div class="se-time-val" style="color:var(--text-muted)">${s.fim}</div>`:''}</div>
       <div class="se-line ${lineClass}"></div>
       <div class="se-body">
