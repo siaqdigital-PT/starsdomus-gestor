@@ -2547,7 +2547,9 @@ async function updateProp(id) {
     dono:  document.getElementById('p-dono').value,
     tel:   document.getElementById('p-tel').value,
     emoji: document.getElementById('p-emoji').value||p.emoji,
-    notas: document.getElementById('p-notas').value||''
+    notas: document.getElementById('p-notas').value||'',
+    lat:   parseFloat(document.getElementById('p-lat')?.value)||null,
+    lng:   parseFloat(document.getElementById('p-lng')?.value)||null
   };
   // Upload nova foto se existir
   const fotoUrl = await uploadPropFoto(id);
@@ -2555,6 +2557,7 @@ async function updateProp(id) {
   try {
     await supa.patch('propriedades',id,body);
     Object.assign(p,body);
+    p.lat = body.lat; p.lng = body.lng;
     if (fotoUrl) p.foto_url = fotoUrl;
     closeModal('modal-prop');
     renderProps(); buildPropSelect();
