@@ -1120,9 +1120,11 @@ const _origDrop = dropServico;
 async function dropServico(event, novaData, touchServId) {
   if (event) { event.preventDefault(); if(event.currentTarget) event.currentTarget.style.outline = ''; }
   const servId = touchServId || (event && event.dataTransfer.getData('servId'));
-  if (!servId || !novaData) return;
-  const s = servicos.find(x=>x.id===servId);
-  if (!s || s.data===novaData) return;
+  showToast(`DROP: servId=${servId} data=${novaData}`, '🔍');
+  if (!servId || !novaData) { showToast('Falta servId ou data','⚠'); return; }
+  const s = servicos.find(x=>String(x.id)===String(servId));
+  if (!s) { showToast(`ID ${servId} não encontrado em ${servicos.length} serviços`,'⚠'); return; }
+  if (s.data===novaData) { showToast('Mesmo dia — sem alteração','ℹ'); return; }
   const dataAnterior = s.data;
   s.data = novaData;
   renderServiceList(); updateStats(); buildCalendar();
