@@ -1062,59 +1062,56 @@ async function dragServico(event, servId) {
 let _touchDragId = null;
 let _touchClone = null;
 
+function _getCalCells() {
+  return Array.from(document.querySelectorAll('[data-cal-date]'));
+}
+
+function _cellFromTouch(x, y) {
+  const cells = _getCalCells();
+  for (const cell of cells) {
+    const r = cell.getBoundingClientRect();
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return cell;
+  }
+  return null;
+}
+
 function touchDragStart(event, servId) {
   _touchDragId = servId;
-  // Create visual clone
   const el = event.currentTarget;
-  _touchClone = el.cloneNode(true);
-  _touchClone.style.cssText = `position:fixed;pointer-events:none;z-index:9999;opacity:0.85;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:700;color:#fff;background:var(--gold-deep);box-shadow:0 4px 16px rgba(0,0,0,0.3)`;
-  _touchClone.textContent = el.textContent;
+  _touchClone = document.createElement('div');
+  _touchClone.textContent = el.textContent.trim();
+  _touchClone.style.cssText = 'position:fixed;pointer-events:none;z-index:9999;opacity:0.9;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:700;color:#fff;background:var(--gold-deep);box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap';
   document.body.appendChild(_touchClone);
   const t = event.touches[0];
-  _touchClone.style.left = (t.clientX - 30) + 'px';
-  _touchClone.style.top  = (t.clientY - 15) + 'px';
+  _touchClone.style.left = (t.clientX - 40) + 'px';
+  _touchClone.style.top  = (t.clientY - 24) + 'px';
   event.preventDefault();
 }
 
 function touchDragMove(event) {
   if (!_touchDragId || !_touchClone) return;
   const t = event.touches[0];
-  _touchClone.style.left = (t.clientX - 30) + 'px';
-  _touchClone.style.top  = (t.clientY - 15) + 'px';
-  // Highlight cell under finger
-  _touchClone.style.display = 'none';
-  const el = document.elementFromPoint(t.clientX, t.clientY);
-  _touchClone.style.display = '';
-  document.querySelectorAll('.cal-drop-target').forEach(c => c.style.background = '');
-  if (el) {
-    const cell = el.closest('[data-cal-date]');
-    if (cell) cell.style.background = 'rgba(184,146,58,0.2)';
-  }
+  _touchClone.style.left = (t.clientX - 40) + 'px';
+  _touchClone.style.top  = (t.clientY - 24) + 'px';
+  // Highlight cell using rect comparison
+  document.querySelectorAll('[data-cal-date]').forEach(c => { c.style.background=''; c.style.outline=''; });
+  const cell = _cellFromTouch(t.clientX, t.clientY);
+  if (cell) { cell.style.background='rgba(184,146,58,0.25)'; cell.style.outline='2px solid var(--gold)'; }
   event.preventDefault();
 }
 
 function touchDragEnd(event) {
   if (!_touchDragId) return;
   const t = event.changedTouches[0];
-  // Remove clone AFTER elementFromPoint so it's not in the way
-  if (_touchClone) { _touchClone.style.display = 'none'; }
-  // Find element under finger
-  const el = document.elementFromPoint(t.clientX, t.clientY);
-  // Now remove clone
   if (_touchClone) { _touchClone.remove(); _touchClone = null; }
-  // Clear highlights
-  document.querySelectorAll('[data-cal-date]').forEach(c => { c.style.background = ''; c.style.outline = ''; });
-  if (el) {
-    const cell = el.closest('[data-cal-date]');
-    if (cell) {
-      const novaData = cell.dataset.calDate;
-      const sid = _touchDragId;
-      _touchDragId = null;
-      dropServico(null, novaData, sid);
-      return;
-    }
-  }
+  document.querySelectorAll('[data-cal-date]').forEach(c => { c.style.background=''; c.style.outline=''; });
+  const cell = _cellFromTouch(t.clientX, t.clientY);
+  const sid = _touchDragId;
   _touchDragId = null;
+  if (cell) {
+    const novaData = cell.dataset.calDate;
+    dropServico(null, novaData, sid);
+  }
 }
 
 // Patch dropServico to accept optional servId (for touch)
