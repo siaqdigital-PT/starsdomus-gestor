@@ -1274,7 +1274,7 @@ function buildCalendar() {
       sp[s.data].total++;
       if (s.estado === 'concluido') sp[s.data].concluidos++;
       const prop = getProp(s.propId);
-      sp[s.data].servs.push({ nome: prop?.nome||'—', empresa: s.empresa||'' });
+      sp[s.data].servs.push({ id: s.id, nome: prop?.nome||'—', empresa: s.empresa||'', estado: s.estado });
     }
   });
 
