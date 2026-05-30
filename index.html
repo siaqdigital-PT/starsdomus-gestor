@@ -938,6 +938,23 @@ if ('serviceWorker' in navigator) {
         <textarea class="form-ctrl" id="p-notas" rows="3" placeholder="Ex: Cão na casa, porta difícil, cofre no quarto..." style="resize:none;font-size:13px;line-height:1.5"></textarea>
         <div style="font-size:10px;color:var(--text-muted);margin-top:4px">Visível ao funcionário antes de iniciar o serviço</div>
       </div>
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <label class="form-label" style="margin:0">📍 Coordenadas GPS</label>
+          <button type="button" onclick="getGoogleMapsCoords()" style="background:none;border:none;color:var(--gold-deep);font-family:var(--font-sans);font-size:11px;font-weight:700;cursor:pointer;padding:0">Obter do Google Maps</button>
+        </div>
+        <div class="form-row">
+          <div>
+            <label class="form-label" style="margin-bottom:4px">Latitude</label>
+            <input class="form-ctrl" id="p-lat" placeholder="Ex: 41.6936" type="number" step="any">
+          </div>
+          <div>
+            <label class="form-label" style="margin-bottom:4px">Longitude</label>
+            <input class="form-ctrl" id="p-lng" placeholder="Ex: -8.8340" type="number" step="any">
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px">Necessário para verificação de geofencing (200m)</div>
+      </div>
       <!-- Foto da propriedade -->
       <div class="form-group">
         <label class="form-label">📷 Foto da Propriedade</label>
@@ -2378,6 +2395,11 @@ async function saveStaff() {
     renderStaff(); buildStaffGrid(); showToast(`${nome} adicionado!`,'✓');
   } catch(e){showToast('Erro ao adicionar','⚠');console.error(e);}
 }
+function getGoogleMapsCoords() {
+  window.open('https://maps.google.com', '_blank');
+  showToast('No Google Maps: clica com botão direito → "O que existe aqui?" → copia as coordenadas', '📍');
+}
+
 function confirmDeleteServico(id) {
   const s = servicos.find(x=>x.id===id); if(!s) return;
   const prop = getProp(s.propId);
@@ -2479,7 +2501,7 @@ function abrirNovaPropsInline() {
 let _returnToNovoServico = false;
 
 function abrirNovaProps() {
-  ['p-nome','p-morada','p-dono','p-tel','p-notas'].forEach(id => {
+  ['p-nome','p-morada','p-dono','p-tel','p-notas','p-lat','p-lng'].forEach(id => {
     const el = document.getElementById(id); if(el) el.value = '';
   });
   document.getElementById('p-emoji').value = '🏠';
@@ -2499,6 +2521,8 @@ function editProp(id) {
   document.getElementById('p-tel').value   = p.tel    || '';
   document.getElementById('p-emoji').value = p.emoji  || '🏠';
   document.getElementById('p-notas').value = p.notas  || '';
+  document.getElementById('p-lat').value   = p.lat    || '';
+  document.getElementById('p-lng').value   = p.lng    || '';
   // Mostrar foto existente se houver
   resetPropFoto();
   if (p.foto_url) {
@@ -2546,7 +2570,9 @@ async function updateProp(id) {
 async function saveProp() {
   const nome=document.getElementById('p-nome').value.trim();
   if(!nome){showToast('Nome obrigatório','⚠');return;}
-  const body={nome,morada:document.getElementById('p-morada').value,dono:document.getElementById('p-dono').value,tel:document.getElementById('p-tel').value,emoji:document.getElementById('p-emoji').value||'🏠',notas:document.getElementById('p-notas').value||'',ativa:true,foto_url:''};
+  const lat=parseFloat(document.getElementById('p-lat')?.value)||null;
+  const lng=parseFloat(document.getElementById('p-lng')?.value)||null;
+  const body={nome,morada:document.getElementById('p-morada').value,dono:document.getElementById('p-dono').value,tel:document.getElementById('p-tel').value,emoji:document.getElementById('p-emoji').value||'🏠',notas:document.getElementById('p-notas').value||'',lat,lng,ativa:true,foto_url:''};
   try {
     const [nova]=await supa.post('propriedades',body);
     // Upload foto se existir
@@ -2560,7 +2586,7 @@ async function saveProp() {
     closeModal('modal-prop');
     renderProps(); buildPropSelect();
     showToast('Propriedade adicionada!');
-    ['p-nome','p-morada','p-dono','p-tel','p-emoji','p-notas'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['p-nome','p-morada','p-dono','p-tel','p-emoji','p-notas','p-lat','p-lng'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     resetPropFoto();
     if (_returnToNovoServico) {
       _returnToNovoServico = false;
