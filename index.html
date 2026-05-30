@@ -1058,10 +1058,64 @@ async function dragServico(event, servId) {
   event.dataTransfer.effectAllowed = 'move';
 }
 
-async function dropServico(event, novaData) {
+// ── Touch drag & drop for mobile ──────────────────────────────
+let _touchDragId = null;
+let _touchClone = null;
+
+function touchDragStart(event, servId) {
+  _touchDragId = servId;
+  // Create visual clone
+  const el = event.currentTarget;
+  _touchClone = el.cloneNode(true);
+  _touchClone.style.cssText = `position:fixed;pointer-events:none;z-index:9999;opacity:0.85;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:700;color:#fff;background:var(--gold-deep);box-shadow:0 4px 16px rgba(0,0,0,0.3)`;
+  _touchClone.textContent = el.textContent;
+  document.body.appendChild(_touchClone);
+  const t = event.touches[0];
+  _touchClone.style.left = (t.clientX - 30) + 'px';
+  _touchClone.style.top  = (t.clientY - 15) + 'px';
   event.preventDefault();
-  event.currentTarget.style.outline = '';
-  const servId = event.dataTransfer.getData('servId');
+}
+
+function touchDragMove(event) {
+  if (!_touchDragId || !_touchClone) return;
+  const t = event.touches[0];
+  _touchClone.style.left = (t.clientX - 30) + 'px';
+  _touchClone.style.top  = (t.clientY - 15) + 'px';
+  // Highlight cell under finger
+  _touchClone.style.display = 'none';
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  _touchClone.style.display = '';
+  document.querySelectorAll('.cal-drop-target').forEach(c => c.style.background = '');
+  if (el) {
+    const cell = el.closest('[data-cal-date]');
+    if (cell) cell.style.background = 'rgba(184,146,58,0.2)';
+  }
+  event.preventDefault();
+}
+
+function touchDragEnd(event) {
+  if (!_touchDragId) return;
+  if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+  const t = event.changedTouches[0];
+  _touchClone && (_touchClone.style.display = 'none');
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  document.querySelectorAll('[data-cal-date]').forEach(c => c.style.background = '');
+  if (el) {
+    const cell = el.closest('[data-cal-date]');
+    if (cell) {
+      const novaData = cell.dataset.calDate;
+      dropServico(null, novaData, _touchDragId);
+    }
+  }
+  _touchDragId = null;
+}
+
+// Patch dropServico to accept optional servId (for touch)
+const _origDrop = dropServico;
+
+async function dropServico(event, novaData, touchServId) {
+  if (event) { event.preventDefault(); if(event.currentTarget) event.currentTarget.style.outline = ''; }
+  const servId = touchServId || (event && event.dataTransfer.getData('servId'));
   if (!servId || !novaData) return;
   const s = servicos.find(x=>x.id===servId);
   if (!s || s.data===novaData) return;
@@ -1316,14 +1370,14 @@ function buildCalendar() {
         const txtCor = isSelected ? '#fff' : '#fff';
         const nomeShort = sv.nome.length > 8 ? sv.nome.slice(0,7)+'…' : sv.nome;
         const isDone = sv.estado === 'concluido';
-        return `<div draggable="${!isDone}" ondragstart="event.stopPropagation();dragServico(event,'${sv.id}')" style="width:100%;background:${cor};border-radius:3px;padding:1px 3px;font-size:7px;font-weight:700;color:${txtCor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;margin-top:1px;cursor:${isDone?'default':'grab'}">${nomeShort}</div>`;
+        return `<div draggable="${!isDone}" ondragstart="event.stopPropagation();dragServico(event,'${sv.id}')" ontouchstart="touchDragStart(event,'${sv.id}')" ontouchmove="touchDragMove(event)" ontouchend="touchDragEnd(event)" style="width:100%;background:${cor};border-radius:3px;padding:1px 3px;font-size:7px;font-weight:700;color:${txtCor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;margin-top:1px;cursor:${isDone?'default':'grab'};touch-action:none">${nomeShort}</div>`;
       }).join('');
       if (info.servs.length > 2) {
         content += `<div style="font-size:6px;color:${isSelected?'rgba(13,15,20,0.6)':'#8B8270'};text-align:center">+${info.servs.length-2}</div>`;
       }
     }
 
-    html += `<div onclick="if(!event._dragging)selectDay('${ds}')" ondragover="event.preventDefault();event.stopPropagation();this.style.background='rgba(184,146,58,0.15)';this.style.outline='2px solid var(--gold)'" ondragleave="this.style.background='';this.style.outline=''" ondrop="this.style.background='';this.style.outline='';dropServico(event,'${ds}')" style="cursor:pointer;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:center;min-height:38px;${cellStyle}">
+    html += `<div data-cal-date="${ds}" onclick="if(!event._dragging)selectDay('${ds}')" ondragover="event.preventDefault();event.stopPropagation();this.style.background='rgba(184,146,58,0.15)';this.style.outline='2px solid var(--gold)'" ondragleave="this.style.background='';this.style.outline=''" ondrop="this.style.background='';this.style.outline='';dropServico(event,'${ds}')" style="cursor:pointer;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:center;min-height:38px;${cellStyle}">
       <span style="${numStyle};line-height:1">${d}</span>
       ${content || '<div style="height:8px"></div>'}
     </div>`;
