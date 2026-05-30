@@ -1095,16 +1095,23 @@ function touchDragMove(event) {
 
 function touchDragEnd(event) {
   if (!_touchDragId) return;
-  if (_touchClone) { _touchClone.remove(); _touchClone = null; }
   const t = event.changedTouches[0];
-  _touchClone && (_touchClone.style.display = 'none');
+  // Remove clone AFTER elementFromPoint so it's not in the way
+  if (_touchClone) { _touchClone.style.display = 'none'; }
+  // Find element under finger
   const el = document.elementFromPoint(t.clientX, t.clientY);
-  document.querySelectorAll('[data-cal-date]').forEach(c => c.style.background = '');
+  // Now remove clone
+  if (_touchClone) { _touchClone.remove(); _touchClone = null; }
+  // Clear highlights
+  document.querySelectorAll('[data-cal-date]').forEach(c => { c.style.background = ''; c.style.outline = ''; });
   if (el) {
     const cell = el.closest('[data-cal-date]');
     if (cell) {
       const novaData = cell.dataset.calDate;
-      dropServico(null, novaData, _touchDragId);
+      const sid = _touchDragId;
+      _touchDragId = null;
+      dropServico(null, novaData, sid);
+      return;
     }
   }
   _touchDragId = null;
