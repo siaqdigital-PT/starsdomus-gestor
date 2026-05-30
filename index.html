@@ -1315,14 +1315,15 @@ function buildCalendar() {
         const cor = isSelected ? 'rgba(13,15,20,0.75)' : (empresaCor[sv.empresa] || '#8B8270');
         const txtCor = isSelected ? '#fff' : '#fff';
         const nomeShort = sv.nome.length > 8 ? sv.nome.slice(0,7)+'…' : sv.nome;
-        return `<div style="width:100%;background:${cor};border-radius:3px;padding:1px 3px;font-size:7px;font-weight:700;color:${txtCor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;margin-top:1px">${nomeShort}</div>`;
+        const isDone = sv.estado === 'concluido';
+        return `<div draggable="${!isDone}" ondragstart="event.stopPropagation();dragServico(event,'${sv.id}')" style="width:100%;background:${cor};border-radius:3px;padding:1px 3px;font-size:7px;font-weight:700;color:${txtCor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;margin-top:1px;cursor:${isDone?'default':'grab'}">${nomeShort}</div>`;
       }).join('');
       if (info.servs.length > 2) {
         content += `<div style="font-size:6px;color:${isSelected?'rgba(13,15,20,0.6)':'#8B8270'};text-align:center">+${info.servs.length-2}</div>`;
       }
     }
 
-    html += `<div onclick="selectDay('${ds}')" ondragover="event.preventDefault();this.style.outline='2px solid var(--gold)'" ondragleave="this.style.outline=''" ondrop="dropServico(event,'${ds}')" style="cursor:pointer;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:center;min-height:38px;${cellStyle}">
+    html += `<div onclick="if(!event._dragging)selectDay('${ds}')" ondragover="event.preventDefault();event.stopPropagation();this.style.background='rgba(184,146,58,0.15)';this.style.outline='2px solid var(--gold)'" ondragleave="this.style.background='';this.style.outline=''" ondrop="this.style.background='';this.style.outline='';dropServico(event,'${ds}')" style="cursor:pointer;padding:3px 2px 2px;display:flex;flex-direction:column;align-items:center;min-height:38px;${cellStyle}">
       <span style="${numStyle};line-height:1">${d}</span>
       ${content || '<div style="height:8px"></div>'}
     </div>`;
